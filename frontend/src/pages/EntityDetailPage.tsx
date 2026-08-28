@@ -1,0 +1,251 @@
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import {
+  Building2,
+  FileText,
+  Play,
+  ArrowLeft,
+  Mail,
+  ArrowRight,
+  TrendingUp,
+} from 'lucide-react';
+import {
+  fetchEntityDetail,
+  fetchEntityHistory,
+  fetchEntityRadar,
+  fetchFindings,
+  runPipeline,
+} from '../api/services';
+import { EntityDetail, UnifiedFinding } from '../types';
+import { CompositeScoreGauge } from '../components/charts/CompositeScoreGauge';
+import { TrendLineChart } from '../components/charts/TrendLineChart';
+import { EngineRadarChart } from '../components/charts/EngineRadarChart';
+import { RiskBadge } from '../components/common/RiskBadge';
+import { LoadingSpinner } from '../components/common/LoadingSpinner';
+import { useNotification } from '../context/NotificationContext';
+
+export const EntityDetailPage: React.FC = () => {
+  const { entityId } = useParams<{ entityId: string }>();
+  const [detail, setDetail] = useState<EntityDetail | null>(null);
+  const [history, setHistory] = useState<any[]>([]);
+  const [radar, setRadar] = useState<any[]>([]);
+  const [findings, setFindings] = useState<UnifiedFinding[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [runningAnalysis, setRunningAnalysis] = useState(false);
+
+  const navigate = useNavigate();
+  const { notify } = useNotification();
+
+  const loadAll = async () => {
+    if (!entityId) return;
+    setLoading(true);
+    try {
+      const [detData, histData, radarData, findData] = await Promise.all([
+        fetchEntityDetail(entityId),
+        fetchEntityHistory(entityId),
+        fetchEntityRadar(entityId),
+        fetchFindings({ entity_id: entityId }),
+      ]);
+      setDetail(detData);
+      setHistory(histData);
+      setRadar(radarData);
+      setFindings(findData);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadAll();
+  }, [entityId]);
+
+  const handleRunAnalysis = async () => {
+    if (!entityId) return;
+    setRunningAnalysis(true);
+    try {
+      await runPipeline(entityId);
+      notify('success', 'Pipeline Execution Triggered', 'Analytics, Risk Scoring, and Merkle Manifest generated');
+      await loadAll();
+    } catch (err: any) {
+      notify('error', 'Execution Failed', err.message || 'Pipeline error');
+    } finally {
+      setRunningAnalysis(false);
+    }
+  };
+
+  if (loading || !detail) {
+    return (
+      <div className="py-20 flex justify-center">
+        <LoadingSpinner size="lg" text="Loading Entity Profile & Risk Telemetry..." />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Top Bar Navigation */}
+      <div className="flex items-center justify-between">
+        <button
+          onClick={() => navigate('/entities')}
+          className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Back to Entity Registry</span>
+        </button>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleRunAnalysis}
+            disabled={runningAnalysis}
+            className="flex items-center gap-2 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-lg text-xs font-semibold text-slate-200 shadow-md transition disabled:opacity-50"
+          >
+            <Play className="w-3.5 h-3.5 text-brand-400" />
+            <span>{runningAnalysis ? 'Executing...' : 'Re-Run Analytics Pipeline'}</span>
+          </button>
+
+          <button
+            onClick={() => navigate(`/reports/${entityId}`)}
+            className="flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-500 rounded-lg text-xs font-semibold text-white shadow-lg shadow-brand-600/30 transition"
+          >
+            <FileText className="w-4 h-4" />
+            <span>Generate Supervisory Report</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Entity Profile Banner */}
+      <div className="bg-surface-card border border-surface-border rounded-xl p-6 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="flex items-start gap-4">
+          <div className="w-14 h-14 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-brand-400 shadow-inner shrink-0">
+            <Building2 className="w-7 h-7" />
+          </div>
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl font-bold text-white tracking-tight">{detail.entity.name}</h1>
+              <RiskBadge level={detail.risk_tier} size="md" />
+            </div>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-slate-400 font-mono">
+              <span>Code: <strong className="text-slate-200">{detail.entity.entity_code}</strong></span>
+              <span>•</span>
+              <span>Sector: <strong className="text-slate-200">{detail.entity.sector}</strong></span>
+              <span>•</span>
+              <span>Scale: <strong className="text-slate-200">{detail.entity.size_tier}</strong></span>
+              {detail.entity.contact_email && (
+                <>
+                  <span>•</span>
+                  <span className="flex items-center gap-1">
+                    <Mail className="w-3.5 h-3.5" />
+                    {detail.entity.contact_email}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-6 border-t md:border-t-0 md:border-l border-surface-border pt-4 md:pt-0 md:pl-6">
+          <div className="text-center">
+            <div className="text-xs text-surface-muted uppercase tracking-wider font-semibold">Active Gaps</div>
+            <div className="text-2xl font-bold text-red-400 mt-1">{detail.open_findings_count}</div>
+          </div>
+          <div className="text-center">
+            <div className="text-xs text-surface-muted uppercase tracking-wider font-semibold">Trend</div>
+            <div className="text-sm font-semibold text-amber-400 mt-2 flex items-center gap-1">
+              <TrendingUp className="w-4 h-4" />
+              {detail.trend_direction}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Grid: 45/35/20 Formula Dial & 6-Engine Radar */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Gauge & Subscore breakdown */}
+        <CompositeScoreGauge
+          score={detail.latest_risk_score}
+          gapSubscore={detail.execution_gap_score}
+          negativeSubscore={detail.negative_space_score}
+          peerSubscore={detail.peer_deviation_score}
+          riskTier={detail.risk_tier}
+        />
+
+        {/* 6-Engine Multi-Axis Radar */}
+        <div className="bg-surface-card border border-surface-border rounded-xl p-6 shadow-xl flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-semibold text-slate-200">Engine Multi-Axis Radar Profile</h3>
+              <span className="text-xs font-mono text-slate-400">vs Sector Mean</span>
+            </div>
+            <p className="text-xs text-surface-muted mb-4">
+              Evaluation across 6 engines: Gap, Negative Space, Note Plagiarism, SLA Breach, Sensor Silence, Peer Dev.
+            </p>
+            <EngineRadarChart data={radar} height={260} />
+          </div>
+        </div>
+      </div>
+
+      {/* Historical Trend Chart */}
+      <div className="bg-surface-card border border-surface-border rounded-xl p-6 shadow-xl">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-base font-bold text-white tracking-tight">Historical Risk Trajectory & Scoring Waves</h3>
+            <p className="text-xs text-surface-muted">Time-series tracking of composite and subscore components</p>
+          </div>
+        </div>
+        <TrendLineChart data={history} height={260} />
+      </div>
+
+      {/* Active Supervisory Findings */}
+      <div className="bg-surface-card border border-surface-border rounded-xl p-6 shadow-xl">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-base font-bold text-white tracking-tight">Active Supervisory Findings for {detail.entity.name}</h3>
+            <p className="text-xs text-surface-muted">Detailed gap, omission, and correlation findings requiring supervisory review</p>
+          </div>
+          <span className="text-xs text-slate-400 font-mono">{findings.length} findings recorded</span>
+        </div>
+
+        {findings.length === 0 ? (
+          <div className="py-12 text-center text-slate-400 text-xs">
+            No active compliance violations or negative space anomalies detected.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {findings.map((f) => (
+              <div
+                key={f.finding_id}
+                className="p-4 rounded-xl bg-slate-950/80 border border-surface-border flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-slate-700 transition"
+              >
+                <div className="space-y-1 flex-1">
+                  <div className="flex items-center gap-2.5">
+                    <RiskBadge level={f.severity} size="sm" />
+                    <span className="font-bold text-slate-100 text-sm">{f.title}</span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800">
+                      {f.rule_or_check_id}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-300 line-clamp-2">{f.description}</p>
+                </div>
+
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="text-[11px] font-mono text-slate-400">
+                    {f.evidence_record_ids.length} evidence rows
+                  </span>
+                  <button
+                    onClick={() => navigate(`/findings/${f.finding_id}`)}
+                    className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-brand-600 hover:text-white border border-slate-700 text-slate-300 text-xs font-medium inline-flex items-center gap-1 transition"
+                  >
+                    <span>Inspect Case</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
