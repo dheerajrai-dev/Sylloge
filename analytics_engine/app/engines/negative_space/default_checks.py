@@ -1,0 +1,98 @@
+"""Default 8 MVP Negative Space check definitions."""
+
+from typing import List
+from .models import CheckDefinition
+
+
+def get_default_negative_space_checks() -> List[CheckDefinition]:
+    """Returns the 8 authoritative MVP Negative Space absence checks (NS-01 to NS-08)."""
+    return [
+        CheckDefinition(
+            check_id="NS-01",
+            name="EWMA Volume Cliff / Sudden Sensor Silence",
+            category="LOG_SILENCE",
+            severity_base=85,
+            confidence=0.90,
+            min_sample_size=15,
+            description_template="Sudden telemetry volume drop detected: {drop_percentage}% drop from EWMA baseline.",
+            rationale_template="Daily telemetry volume dropped from expected baseline of {expected_volume} to {observed_volume} ({drop_percentage}% reduction, exceeding 3-sigma threshold).",
+            recommendation="Verify network sensor connectivity and SIEM collector health immediately.",
+        ),
+        CheckDefinition(
+            check_id="NS-02",
+            name="Missing Weekend / Off-Hours Analyst Activity",
+            category="COVERAGE_VACUUM",
+            severity_base=80,
+            confidence=0.95,
+            min_sample_size=20,
+            description_template="High weekend alert volume ({observed_volume} alerts) with zero analyst activity logs.",
+            rationale_template="During weekend evaluation period, {observed_volume} security alerts fired with 0 analyst console activity or triage audit logs.",
+            recommendation="Establish weekend on-call monitoring coverage or automated alert response playbooks.",
+        ),
+        CheckDefinition(
+            check_id="NS-03",
+            name="Zero Coverage on Crown-Jewel Assets",
+            category="ASSET_BLINDNESS",
+            severity_base=95,
+            confidence=0.98,
+            min_sample_size=1,
+            description_template="Crown Jewel assets detected with zero telemetry coverage or critical sensor downtime.",
+            rationale_template="{unmonitored_count} out of {total_crown_jewels} Crown Jewel assets lack active EDR/WAF/NDR telemetry coverage reports.",
+            recommendation="Deploy required EDR and security monitoring agents to all unmonitored Crown Jewel systems.",
+        ),
+        CheckDefinition(
+            check_id="NS-04",
+            name="Asymmetric Case Closure vs Creation Rate",
+            category="BACKLOG_SURGE",
+            severity_base=75,
+            confidence=0.85,
+            min_sample_size=30,
+            description_template="Severe case closure deficit: only {closed_cases} closed out of {created_cases} created ({closure_rate}% closure rate).",
+            rationale_template="Over the evaluation period, {created_cases} cases were opened but only {closed_cases} were resolved (closure rate {closure_rate}% < 10% threshold).",
+            recommendation="Increase SOC triage capacity to prevent unmanageable incident queue buildup.",
+        ),
+        CheckDefinition(
+            check_id="NS-05",
+            name="Missing Escalations on High-Severity Alert Spike",
+            category="ESCALATION_BLINDNESS",
+            severity_base=88,
+            confidence=0.88,
+            min_sample_size=20,
+            description_template="High/Critical alert surge ({observed_volume} alerts) occurred with zero escalations.",
+            rationale_template="A surge of {observed_volume} High/Critical priority alerts occurred during the evaluation window with zero escalations to Tier-2/Tier-3 IR teams.",
+            recommendation="Audit triage procedures to ensure critical alert surges trigger prompt senior escalation.",
+        ),
+        CheckDefinition(
+            check_id="NS-06",
+            name="Low Categorical Shannon Entropy (Monoculture / Blinded Rules)",
+            category="MONOCULTURE_BLINDNESS",
+            severity_base=70,
+            confidence=0.82,
+            min_sample_size=50,
+            description_template="Blinded rule telemetry: alert distribution entropy collapsed to {entropy_score} bits.",
+            rationale_template="Categorical alert rule distribution exhibits abnormally low Shannon entropy H(X) = {entropy_score} bits (< 0.50 bits threshold), indicating sensor blindness on other attack vectors.",
+            recommendation="Audit SIEM detection rule enablement to ensure multi-vector attack detection coverage.",
+        ),
+        CheckDefinition(
+            check_id="NS-07",
+            name="Unnaturally Constant Alert Intervals (Synthetic Heartbeat)",
+            category="SYNTHETIC_DATA_RISK",
+            severity_base=85,
+            confidence=0.92,
+            min_sample_size=20,
+            description_template="Synthetic alert intervals detected: coefficient of variation CV = {cv_score} < 0.01.",
+            rationale_template="Alert inter-arrival times exhibit near-zero variance (CV = {cv_score}), indicating synthetic heartbeat or mock telemetry feed rather than genuine production activity.",
+            recommendation="Inspect telemetry ingestion pipeline for mocked or looping synthetic telemetry sources.",
+        ),
+        CheckDefinition(
+            check_id="NS-08",
+            name="Missing Post-Incident Remediation / Audit Trace",
+            category="REMEDIATION_GAP",
+            severity_base=65,
+            confidence=0.80,
+            min_sample_size=1,
+            description_template="Resolved critical incident {incident_id} lacks post-incident remediation updates.",
+            rationale_template="Critical security incident {incident_id} was resolved over 14 days ago without subsequent coverage telemetry updates or post-incident audit reviews.",
+            recommendation="Conduct mandatory post-incident review and register architectural remediation updates.",
+        ),
+    ]
