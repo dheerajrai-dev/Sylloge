@@ -164,6 +164,18 @@ class NegativeSpaceFinding(Base):
         default=list,
         server_default="[]",
     )
+    raw_evidence_refs: Mapped[List[Any]] = mapped_column(
+        JSONType,
+        nullable=False,
+        default=list,
+        server_default="[]",
+    )
+    metric_values: Mapped[Dict[str, Any]] = mapped_column(
+        JSONType,
+        nullable=False,
+        default=dict,
+        server_default="{}",
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
