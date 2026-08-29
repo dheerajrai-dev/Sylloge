@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
   ShieldAlert,
-  FileCheck2,
   CheckCircle,
   MessageSquarePlus,
   Download,
@@ -153,65 +152,99 @@ export const CaseDrillDownPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Rationale Card (Explainability Engine Output) */}
-      <div className="bg-surface-card border border-brand-800/40 rounded-xl p-6 shadow-2xl relative overflow-hidden bg-gradient-to-br from-slate-900 via-surface-card to-slate-950">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-4 border-b border-surface-border pb-4">
+      {/* Rationale Card (Explainability Engine Output — 7-Part Structure) */}
+      <div className="bg-surface-card border border-brand-800/40 rounded-xl p-6 shadow-2xl relative overflow-hidden bg-gradient-to-br from-slate-900 via-surface-card to-slate-950 space-y-6">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-surface-border pb-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-brand-950 border border-brand-700/60 text-brand-400">
+            <div className="p-2.5 rounded-lg bg-brand-950 border border-brand-700/60 text-brand-400 shadow-md">
               <ShieldAlert className="w-6 h-6" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-xl font-bold text-white tracking-tight">{rationale_card.title}</h1>
                 <RiskBadge level={rationale_card.severity} size="sm" />
+                <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded bg-brand-950 text-brand-300 border border-brand-800">
+                  {finding.engine}
+                </span>
               </div>
-              <p className="text-xs font-mono text-slate-400 mt-0.5">
-                Rule ID: <strong className="text-brand-300">{finding.rule_or_check_id}</strong> • Engine: <strong className="text-slate-200">{finding.engine}</strong> • Entity: <strong className="text-slate-200">{finding.entity_name}</strong>
+              <p className="text-xs font-mono text-slate-400 mt-1">
+                Rule ID: <strong className="text-brand-300">{finding.rule_or_check_id}</strong> • Entity: <strong className="text-slate-200">{finding.entity_name}</strong> • Category: <strong className="text-slate-200">{finding.category}</strong>
               </p>
             </div>
           </div>
 
           <div className="text-right">
-            <span className="text-[11px] font-mono px-2.5 py-1 rounded bg-slate-900 border border-slate-800 text-slate-300">
+            <span className="text-[11px] font-mono px-3 py-1 rounded bg-slate-900 border border-slate-800 text-slate-300">
               Status: <strong className="text-emerald-400">{finding.status}</strong>
             </span>
           </div>
         </div>
 
-        {/* Explainability Rationale Content */}
-        <div className="space-y-4">
-          <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Supervisory Rationale & Derivation</h4>
-            <div className="p-4 rounded-lg bg-slate-950/80 border border-surface-border text-xs text-slate-200 leading-relaxed font-sans">
-              {rationale_card.rationale_text}
+        {/* 7-Part Plain-Language Supervisory Rationale */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* 1. What Happened */}
+          <div className="p-4 rounded-xl bg-slate-950/90 border border-slate-800 space-y-1">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-brand-400 font-mono">1. What Happened</div>
+            <p className="text-xs text-slate-200 leading-relaxed">{finding.description || rationale_card.title}</p>
+          </div>
+
+          {/* 2. Why SAT-SA Flagged It */}
+          <div className="p-4 rounded-xl bg-slate-950/90 border border-slate-800 space-y-1">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-amber-400 font-mono">2. Why SAT-SA Flagged It</div>
+            <p className="text-xs text-slate-200 leading-relaxed">{rationale_card.rationale_text}</p>
+          </div>
+
+          {/* 3. Source Files Used */}
+          <div className="p-4 rounded-xl bg-slate-950/90 border border-slate-800 space-y-1">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-sky-400 font-mono">3. Source Dataset & Files</div>
+            <div className="text-xs text-slate-200 font-mono space-y-1">
+              <div>Dataset: <strong className="text-sky-300">{finding.category || 'Telemetry Submission'}</strong></div>
+              <div>Source Files: <strong className="text-slate-100">{
+                finding.engine === 'EXECUTION_GAP'
+                  ? '04_escalation_records.csv / 02_case_management.csv'
+                  : '05_asset_inventory.csv / 01_alert_metadata.csv / 07_coverage_reports.csv'
+              }</strong></div>
             </div>
           </div>
 
-          {/* Metric Values Key/Value grid */}
-          {rationale_card.metric_values && Object.keys(rationale_card.metric_values).length > 0 && (
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Engine Metric Parameters</h4>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {Object.entries(rationale_card.metric_values).map(([k, v]) => (
-                  <div key={k} className="p-2.5 rounded-lg bg-slate-950 border border-slate-800">
-                    <div className="text-[10px] uppercase font-mono text-surface-muted truncate">{k.replace(/_/g, ' ')}</div>
-                    <div className="text-sm font-mono font-bold text-brand-300 mt-0.5">{String(v)}</div>
-                  </div>
-                ))}
-              </div>
+          {/* 4. Related Records */}
+          <div className="p-4 rounded-xl bg-slate-950/90 border border-slate-800 space-y-1">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-400 font-mono">4. Related Record IDs</div>
+            <div className="text-xs text-slate-200 font-mono space-y-1">
+              <div>Evidence Records: <strong className="text-emerald-300">{rationale_card.evidence_record_ids?.length || 0} items linked</strong></div>
+              {rationale_card.raw_evidence_refs && rationale_card.raw_evidence_refs.length > 0 && (
+                <div className="truncate">Refs: <strong className="text-slate-300">{rationale_card.raw_evidence_refs.map(r => typeof r === 'object' ? JSON.stringify(r) : String(r)).join(', ')}</strong></div>
+              )}
             </div>
-          )}
+          </div>
+        </div>
 
-          {/* Recommended Action */}
-          {rationale_card.recommended_action && (
-            <div className="p-3 rounded-lg bg-brand-950/40 border border-brand-800/40 text-xs text-brand-200 flex items-start gap-2.5">
-              <FileCheck2 className="w-4 h-4 text-brand-400 mt-0.5 shrink-0" />
-              <div>
-                <span className="font-semibold">Recommended Supervisory Action: </span>
-                {rationale_card.recommended_action}
-              </div>
+        {/* 5. Engine Metric Parameters */}
+        {rationale_card.metric_values && Object.keys(rationale_card.metric_values).length > 0 && (
+          <div>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 font-mono">5. Measured Engine Metric Parameters</h4>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {Object.entries(rationale_card.metric_values).map(([k, v]) => (
+                <div key={k} className="p-3 rounded-lg bg-slate-950 border border-slate-800">
+                  <div className="text-[10px] uppercase font-mono text-slate-400 truncate">{k.replace(/_/g, ' ')}</div>
+                  <div className="text-sm font-mono font-bold text-brand-300 mt-0.5">{String(v)}</div>
+                </div>
+              ))}
             </div>
-          )}
+          </div>
+        )}
+
+        {/* 6. Risk Impact & 7. Recommended Action */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-800">
+          <div className="p-3.5 rounded-lg bg-rose-950/30 border border-rose-800/40 text-xs text-rose-200">
+            <span className="font-bold uppercase font-mono text-[11px] block text-rose-400 mb-0.5">6. Risk Impact Assessment</span>
+            High-priority supervisory violation. May indicate unmonitored attack vectors, SLA gaming, or critical triage omissions.
+          </div>
+
+          <div className="p-3.5 rounded-lg bg-brand-950/40 border border-brand-800/40 text-xs text-brand-200">
+            <span className="font-bold uppercase font-mono text-[11px] block text-brand-400 mb-0.5">7. Recommended Supervisory Action</span>
+            {rationale_card.recommended_action || 'Mandate immediate SOC supervisor review and issue regulatory clarification.'}
+          </div>
         </div>
       </div>
 
@@ -223,14 +256,14 @@ export const CaseDrillDownPage: React.FC = () => {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Layers className="w-4 h-4 text-brand-400" />
-                <h3 className="text-sm font-bold text-white">Canonical Event Records</h3>
+                <h3 className="text-sm font-bold text-white">Canonical Evidence Records & Source Rows</h3>
               </div>
-              <span className="text-xs font-mono text-slate-400">{evidence.length} rows linked</span>
+              <span className="text-xs font-mono text-slate-400">{evidence.length || rationale_card.raw_evidence_refs?.length || 0} records</span>
             </div>
 
-            {evidence.length === 0 ? (
-              <div className="py-8 text-center text-xs text-slate-400 bg-slate-950 rounded-lg">
-                No normalized event rows linked.
+            {evidence.length === 0 && (!rationale_card.raw_evidence_refs || rationale_card.raw_evidence_refs.length === 0) ? (
+              <div className="py-8 text-center text-xs text-amber-400 bg-slate-950 rounded-lg font-mono border border-amber-900/40">
+                Evidence unavailable
               </div>
             ) : (
               <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
@@ -255,6 +288,15 @@ export const CaseDrillDownPage: React.FC = () => {
                     </pre>
                   </div>
                 ))}
+
+                {evidence.length === 0 && rationale_card.raw_evidence_refs?.map((ref, idx) => (
+                  <div key={idx} className="p-3.5 rounded-lg bg-slate-950 border border-surface-border text-xs space-y-1.5 font-mono">
+                    <div className="text-[11px] text-brand-300 font-bold">Evidence Reference #{idx + 1}</div>
+                    <pre className="p-2 rounded bg-slate-900 text-[11px] text-slate-300 overflow-x-auto">
+                      {typeof ref === 'object' ? JSON.stringify(ref, null, 2) : String(ref)}
+                    </pre>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -269,17 +311,17 @@ export const CaseDrillDownPage: React.FC = () => {
                 <h3 className="text-sm font-bold text-white">Quarantine & Raw Submission Diff</h3>
               </div>
               <span className="text-xs font-mono text-amber-400">
-                {rawDiff?.quarantined_rows.length || 0} quarantined rows
+                {rawDiff?.quarantined_rows?.length || 0} quarantined rows
               </span>
             </div>
 
-            {rawDiff?.quarantined_rows.length === 0 && rawDiff?.raw_snippets.length === 0 ? (
+            {(!rawDiff || (rawDiff.quarantined_rows.length === 0 && rawDiff.raw_snippets.length === 0)) ? (
               <div className="py-8 text-center text-xs text-slate-400 bg-slate-950 rounded-lg">
                 No quarantined discrepancies detected for this finding.
               </div>
             ) : (
               <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
-                {rawDiff?.quarantined_rows.map((q, idx) => (
+                {rawDiff.quarantined_rows.map((q, idx) => (
                   <div
                     key={idx}
                     className="p-3.5 rounded-lg bg-red-950/30 border border-red-900/60 text-xs space-y-1 font-mono"
@@ -298,7 +340,7 @@ export const CaseDrillDownPage: React.FC = () => {
                   </div>
                 ))}
 
-                {rawDiff?.raw_snippets.map((s, idx) => (
+                {rawDiff.raw_snippets.map((s, idx) => (
                   <div key={idx} className="p-3.5 rounded-lg bg-slate-950 border border-surface-border text-xs space-y-1 font-mono">
                     <div className="text-slate-400 text-[11px]">Source: {s.source}</div>
                     <pre className="p-2 rounded bg-slate-900 text-[11px] text-slate-300 overflow-x-auto">
