@@ -413,36 +413,51 @@ export const UploadWorkflowPage: React.FC = () => {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {entities.map((e) => {
-                const isSelected = selectedEntityId === e.entity_id;
-                return (
-                  <div
-                    key={e.entity_id}
-                    onClick={() => setSelectedEntityId(e.entity_id)}
-                    className={`p-4 rounded-xl border cursor-pointer transition-all ${
-                      isSelected
-                        ? 'bg-brand-950/60 border-brand-500 shadow-lg shadow-brand-500/10'
-                        : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-mono text-brand-400 px-2 py-0.5 rounded bg-slate-900 border border-slate-800">
-                        {e.entity_code}
-                      </span>
-                      <span className="text-[11px] text-slate-400 font-medium px-2 py-0.5 rounded bg-slate-900 border border-slate-800">
-                        {e.sector}
-                      </span>
+            {entities.length === 0 ? (
+              <div className="p-8 text-center text-slate-400 text-xs border border-dashed border-slate-800 rounded-xl space-y-3 bg-slate-950/40">
+                <p className="text-slate-300">No Supervised Entities currently registered in the system database.</p>
+                <p className="text-slate-400 text-[11px]">Manual Entity Registration is required before uploading telemetry datasets.</p>
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(true)}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs shadow-md shadow-brand-600/30"
+                >
+                  <PlusCircle className="w-4 h-4" />
+                  <span>Register First CSE Entity</span>
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {entities.map((e) => {
+                  const isSelected = selectedEntityId === e.entity_id;
+                  return (
+                    <div
+                      key={e.entity_id}
+                      onClick={() => setSelectedEntityId(e.entity_id)}
+                      className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                        isSelected
+                          ? 'bg-brand-950/60 border-brand-500 shadow-lg shadow-brand-500/10'
+                          : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-mono text-brand-400 px-2 py-0.5 rounded bg-slate-900 border border-slate-800">
+                          {e.entity_code}
+                        </span>
+                        <span className="text-[11px] text-slate-400 font-medium px-2 py-0.5 rounded bg-slate-900 border border-slate-800">
+                          {e.sector}
+                        </span>
+                      </div>
+                      <div className="font-bold text-white text-base mt-2.5">{e.name}</div>
+                      <div className="flex items-center justify-between text-xs text-slate-400 mt-2 pt-2 border-t border-slate-800/80">
+                        <span>{e.size_tier}</span>
+                        {e.latest_risk_tier && <RiskBadge level={e.latest_risk_tier} size="sm" showDot={false} />}
+                      </div>
                     </div>
-                    <div className="font-bold text-white text-base mt-2.5">{e.name}</div>
-                    <div className="flex items-center justify-between text-xs text-slate-400 mt-2 pt-2 border-t border-slate-800/80">
-                      <span>{e.size_tier}</span>
-                      {e.latest_risk_tier && <RiskBadge level={e.latest_risk_tier} size="sm" showDot={false} />}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end pt-4 border-t border-slate-800">
