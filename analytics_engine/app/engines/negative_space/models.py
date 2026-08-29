@@ -39,6 +39,8 @@ class NegativeSpaceFindingDraft(BaseModel):
     entropy_score: Optional[float] = None
     rationale: str
     evidence_record_ids: List[str] = Field(default_factory=list)
+    raw_evidence_refs: List[Any] = Field(default_factory=list)
+    metric_values: Dict[str, Any] = Field(default_factory=dict)
     is_degraded: bool = False
     degradation_factor: float = 1.0
     recommendation: Optional[str] = None
