@@ -161,23 +161,28 @@ class FieldMappingEngine:
         if canonical_name in mapped_dict and mapped_dict[canonical_name] is not None:
             return mapped_dict[canonical_name]
 
+        def _clean(s: str) -> str:
+            return s.lower().replace("_", "").replace(" ", "").replace("-", "")
+
         # 2. Check aliases in raw_dict
         if canonical_name == "raw_ref_id" and self.dataset_type in DATASET_PRIMARY_KEYS:
             specific_keys = DATASET_PRIMARY_KEYS[self.dataset_type]
             for key in specific_keys:
                 if key in raw_dict and raw_dict[key] is not None:
                     return raw_dict[key]
+                clean_key = _clean(key)
                 for rk, rv in raw_dict.items():
-                    if rk.lower() == key.lower() and rv is not None:
+                    if _clean(rk) == clean_key and rv is not None:
                         return rv
 
         aliases = CANONICAL_FIELD_ALIASES.get(canonical_name, [canonical_name])
         for alias in aliases:
             if alias in raw_dict and raw_dict[alias] is not None:
                 return raw_dict[alias]
-            # Also check case-insensitive match
+            clean_alias = _clean(alias)
+            # Also check case-insensitive / space / underscore normalized match
             for rk, rv in raw_dict.items():
-                if rk.lower() == alias.lower() and rv is not None:
+                if _clean(rk) == clean_alias and rv is not None:
                     return rv
 
         return None
