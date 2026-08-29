@@ -42,7 +42,8 @@ docs/
 # Data Dumps, Sample Data & Validation Output
 sample-data/
 synthetic_data/
-validation/
+sih_test_dataset
+
 
 # Logs & Temporary Files
 *.log
