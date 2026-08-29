@@ -297,21 +297,8 @@ export const UploadWorkflowPage: React.FC = () => {
         // Fallback gracefully in offline mock mode
       }
       await new Promise((r) => setTimeout(r, 850));
-      updateLayer(7, 'COMPLETED', totalIngestedRows, 0, 0, 37, '37 total supervisory findings detected (36 EG + 1 NS)');
 
-      // --- Layer 8: Tripartite Weighted Risk Scoring Engine ---
-      updateLayer(8, 'RUNNING', totalIngestedRows, 0, 0, 37, 'Calculating weighted composite score: 45% EG + 35% NS + 20% Peer');
-      await new Promise((r) => setTimeout(r, 600));
-      updateLayer(8, 'COMPLETED', totalIngestedRows, 0, 0, 37, 'Composite score evaluated: Critical Tier (≥75)');
-
-      // --- Layer 9: Explainability Engine & Audit Attestation ---
-      updateLayer(9, 'RUNNING', totalIngestedRows, 0, 0, 37, 'Synthesizing plain-language Rationale Cards & Merkle Root Manifest');
-      await new Promise((r) => setTimeout(r, 650));
-      const sampleMerkle = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
-      setMerkleRootHash(sampleMerkle);
-      updateLayer(9, 'COMPLETED', totalIngestedRows, 0, 0, 37, `Root Merkle: ${sampleMerkle.slice(0, 16)}...`);
-
-      // Load results data
+      // Load results data directly from backend DB
       const [detail, findingsList] = await Promise.all([
         fetchEntityDetail(selectedEntityId),
         fetchFindings({ entity_id: selectedEntityId }),
@@ -320,6 +307,21 @@ export const UploadWorkflowPage: React.FC = () => {
       setResultsFindings(findingsList);
       setTotalValidRows(totalIngestedRows);
       setTotalQuarantinedRows(simulatedQuarantine);
+
+      const findingsCount = findingsList.length;
+      updateLayer(7, 'COMPLETED', totalIngestedRows, 0, 0, findingsCount, `${findingsCount} total supervisory findings detected`);
+
+      // --- Layer 8: Tripartite Weighted Risk Scoring Engine ---
+      updateLayer(8, 'RUNNING', totalIngestedRows, 0, 0, findingsCount, 'Calculating weighted composite score: 45% EG + 35% NS + 20% Peer');
+      await new Promise((r) => setTimeout(r, 600));
+      updateLayer(8, 'COMPLETED', totalIngestedRows, 0, 0, findingsCount, `Composite score evaluated: ${detail.risk_tier || 'LOW'} Tier (${detail.latest_risk_score ?? 0})`);
+
+      // --- Layer 9: Explainability Engine & Audit Attestation ---
+      updateLayer(9, 'RUNNING', totalIngestedRows, 0, 0, findingsCount, 'Synthesizing plain-language Rationale Cards & Merkle Root Manifest');
+      await new Promise((r) => setTimeout(r, 650));
+      const sampleMerkle = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
+      setMerkleRootHash(sampleMerkle);
+      updateLayer(9, 'COMPLETED', totalIngestedRows, 0, 0, findingsCount, `Root Merkle: ${sampleMerkle.slice(0, 16)}...`);
 
       notify('success', 'Supervisory Pipeline Completed', 'All 9 architectural layers processed with 0 errors.');
       setWizardStep(5); // Render Results Page
@@ -910,7 +912,7 @@ export const UploadWorkflowPage: React.FC = () => {
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
               <div className="text-xs font-semibold text-amber-400 uppercase tracking-wider">EXECUTION GAP FINDINGS</div>
               <div className="text-2xl font-bold text-amber-400 mt-1.5">
-                {resultsFindings.filter((f) => f.engine === 'EXECUTION_GAP').length || 36}
+                {resultsFindings.filter((f) => f.engine === 'EXECUTION_GAP').length}
               </div>
               <div className="text-xs text-slate-400 mt-1">SLA, note plagiarism & triage breaches</div>
             </div>
@@ -919,7 +921,7 @@ export const UploadWorkflowPage: React.FC = () => {
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
               <div className="text-xs font-semibold text-rose-400 uppercase tracking-wider">NEGATIVE SPACE FINDINGS</div>
               <div className="text-2xl font-bold text-rose-400 mt-1.5">
-                {resultsFindings.filter((f) => f.engine === 'NEGATIVE_SPACE').length || 1}
+                {resultsFindings.filter((f) => f.engine === 'NEGATIVE_SPACE').length}
               </div>
               <div className="text-xs text-slate-400 mt-1">Telemetry silence cliffs & missing logs</div>
             </div>

@@ -38,7 +38,6 @@ yarn-error.log*
 
 # Documentation & Markdown Files
 docs/
-dics/
 
 # Data Dumps, Sample Data & Validation Output
 sample-data/

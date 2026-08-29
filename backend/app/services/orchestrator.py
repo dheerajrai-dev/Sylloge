@@ -56,8 +56,8 @@ class PipelineOrchestrator:
         except Exception as exc:
             logger.warning(f"Analytics engine remote invocation failed: {exc}. Trying in-process fallback...")
             try:
-                from analytics_engine.engines.pipeline import AnalyticsPipeline
-                from analytics_engine.schemas.requests import AnalyzeRequest
+                from analytics_engine.app.engines.pipeline import AnalyticsPipeline
+                from analytics_engine.app.schemas.requests import AnalyzeRequest
 
                 ae_pipeline = AnalyticsPipeline()
                 ae_req = AnalyzeRequest(
