@@ -199,7 +199,7 @@ export function extractHeaderTokens(contentSnippet: string): string[] {
 
   return firstLine
     .split(delimiter)
-    .map((h) => h.trim().replace(/^["']|["']$/g, '').trim().toLowerCase())
+    .map((h) => h.trim().replace(/^["']|["']$/g, '').trim().toLowerCase().replace(/[\s-]+/g, '_'))
     .filter((h) => h.length > 0);
 }
 

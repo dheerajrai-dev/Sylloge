@@ -103,12 +103,7 @@ async def upload_submission(
 
     # 4. Invoke Ingestion Pipeline Service
     try:
-        import sys
-        dp_root = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), "data-processing")
-        if dp_root not in sys.path:
-            sys.path.insert(0, dp_root)
-
-        from app.pipeline.ingestion_service import IngestionPipelineService
+        from data_processing.app.pipeline.ingestion_service import IngestionPipelineService
         result = await IngestionPipelineService.process_async(
             db=db,
             submission_id=submission_id,
