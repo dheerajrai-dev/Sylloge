@@ -1,6 +1,6 @@
 """Supervised Regulated Entities Management API Router."""
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import uuid
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -140,6 +140,26 @@ async def create_entity(
         updated_at=datetime.now(timezone.utc),
     )
     db.add(entity)
+
+    # Initial baseline risk score record for new entity
+    now = datetime.now(timezone.utc)
+    initial_score = RiskScore(
+        score_id=uuid.uuid4(),
+        entity_id=entity.entity_id,
+        period_start=now - timedelta(days=30),
+        period_end=now,
+        composite_risk_score=25.0,
+        execution_gap_score=20.0,
+        negative_space_score=15.0,
+        peer_deviation_score=30.0,
+        weights_applied={"execution_gap": 0.4, "negative_space": 0.3, "peer_deviation": 0.3},
+        risk_tier="LOW",
+        trend_direction="STABLE",
+        rationale_summary="Initial baseline supervisory registration risk score",
+        calculated_at=now,
+    )
+    db.add(initial_score)
+
     await db.commit()
     await db.refresh(entity)
     return entity

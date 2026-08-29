@@ -12,9 +12,23 @@ export class ApiClient {
     }
     const token = localStorage.getItem('sat_sa_jwt_token');
     if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+      // Validate that the JWT token has 3 valid segments (header.payload.signature)
+      if (token.split('.').length === 3) {
+        headers['Authorization'] = `Bearer ${token}`;
+      } else {
+        // Remove corrupted or malformed tokens from localStorage
+        localStorage.removeItem('sat_sa_jwt_token');
+        localStorage.removeItem('sat_sa_user');
+      }
     }
     return headers;
+  }
+
+  private handleAuthError(resp: Response) {
+    if (resp.status === 401) {
+      localStorage.removeItem('sat_sa_jwt_token');
+      localStorage.removeItem('sat_sa_user');
+    }
   }
 
   async get<T>(path: string, params?: Record<string, any>): Promise<T> {
@@ -38,6 +52,7 @@ export class ApiClient {
     });
 
     if (!resp.ok) {
+      this.handleAuthError(resp);
       const errorData = await resp.json().catch(() => ({ detail: resp.statusText }));
       throw new Error(errorData.detail || errorData.message || `Request failed with status ${resp.status}`);
     }
@@ -53,6 +68,7 @@ export class ApiClient {
     });
 
     if (!resp.ok) {
+      this.handleAuthError(resp);
       const errorData = await resp.json().catch(() => ({ detail: resp.statusText }));
       throw new Error(errorData.detail || errorData.message || `Request failed with status ${resp.status}`);
     }
@@ -68,6 +84,7 @@ export class ApiClient {
     });
 
     if (!resp.ok) {
+      this.handleAuthError(resp);
       const errorData = await resp.json().catch(() => ({ detail: resp.statusText }));
       throw new Error(errorData.detail || errorData.message || `Request failed with status ${resp.status}`);
     }
@@ -82,6 +99,7 @@ export class ApiClient {
     });
 
     if (!resp.ok) {
+      this.handleAuthError(resp);
       const errorData = await resp.json().catch(() => ({ detail: resp.statusText }));
       throw new Error(errorData.detail || errorData.message || `Request failed with status ${resp.status}`);
     }
@@ -97,6 +115,7 @@ export class ApiClient {
     });
 
     if (!resp.ok) {
+      this.handleAuthError(resp);
       const errorData = await resp.json().catch(() => ({ detail: resp.statusText }));
       throw new Error(errorData.detail || errorData.message || `Upload failed with status ${resp.status}`);
     }

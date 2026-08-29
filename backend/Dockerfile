@@ -17,6 +17,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY shared /app/shared
 COPY backend /app/backend
+COPY analytics_engine /app/analytics_engine
+COPY data_processing /app/data_processing
+COPY audit_service /app/audit_service
 COPY alembic /app/alembic
 COPY alembic.ini /app/alembic.ini
 

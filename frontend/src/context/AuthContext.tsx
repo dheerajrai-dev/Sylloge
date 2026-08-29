@@ -16,12 +16,25 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('sat_sa_jwt_token'));
+  const [token, setToken] = useState<string | null>(() => {
+    const raw = localStorage.getItem('sat_sa_jwt_token');
+    if (raw && raw.split('.').length === 3) {
+      return raw;
+    }
+    localStorage.removeItem('sat_sa_jwt_token');
+    localStorage.removeItem('sat_sa_user');
+    return null;
+  });
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('sat_sa_user');
-    if (savedUser && token) {
+    if (token && token.split('.').length !== 3) {
+      localStorage.removeItem('sat_sa_jwt_token');
+      localStorage.removeItem('sat_sa_user');
+      setToken(null);
+      setUser(null);
+    } else if (savedUser && token) {
       try {
         setUser(JSON.parse(savedUser));
       } catch {
