@@ -114,17 +114,22 @@ class RowValidator:
             for group in required_groups:
                 found_field = None
                 for candidate in group:
-                    # Check direct or mapped match
-                    if candidate in data and data[candidate] is not None and str(data[candidate]).strip() != "":
-                        found_field = candidate
+                    c_norm = candidate.lower().replace("_", "").replace(" ", "").replace("-", "")
+                    for rk, rv in data.items():
+                        if rk.lower().replace("_", "").replace(" ", "").replace("-", "") == c_norm and rv is not None and str(rv).strip() != "":
+                            found_field = rk
+                            break
+                    if found_field:
                         break
+                    
                     # Also check if mapped in mapping profile
                     if self.mapping_profile and self.mapping_profile.mapping_rules:
-                        # If candidate is a target, check if any source maps to it
                         for src, tgt in self.mapping_profile.mapping_rules.items():
-                            if tgt == candidate and src in data and data[src] is not None and str(data[src]).strip() != "":
+                            if tgt.lower().replace("_", "").replace(" ", "").replace("-", "") == c_norm and src in data and data[src] is not None and str(data[src]).strip() != "":
                                 found_field = src
                                 break
+                    if found_field:
+                        break
                 
                 if not found_field:
                     return RowValidationFailure(

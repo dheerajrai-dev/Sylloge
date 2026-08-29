@@ -56,8 +56,15 @@ class LogicInterpreter:
             val = getattr(record, field_path, None)
             if val is None:
                 payload = getattr(record, "normalized_payload", None)
-                if isinstance(payload, dict) and field_path in payload:
-                    val = payload[field_path]
+                if isinstance(payload, dict):
+                    if field_path in payload:
+                        val = payload[field_path]
+                    else:
+                        clean_fp = field_path.lower().replace("_", "").replace(" ", "").replace("-", "")
+                        for pk, pv in payload.items():
+                            if pk.lower().replace("_", "").replace(" ", "").replace("-", "") == clean_fp:
+                                val = pv
+                                break
 
         if val is None and isinstance(rec_dict, dict):
             # Support dot-notation (e.g., 'normalized_payload.delay_hours')
@@ -74,7 +81,15 @@ class LogicInterpreter:
             if current is not None:
                 val = current
             elif "normalized_payload" in rec_dict and isinstance(rec_dict["normalized_payload"], dict):
-                val = rec_dict["normalized_payload"].get(field_path)
+                payload = rec_dict["normalized_payload"]
+                if field_path in payload:
+                    val = payload[field_path]
+                else:
+                    clean_fp = field_path.lower().replace("_", "").replace(" ", "").replace("-", "")
+                    for pk, pv in payload.items():
+                        if pk.lower().replace("_", "").replace(" ", "").replace("-", "") == clean_fp:
+                            val = pv
+                            break
 
         # Automatically parse timestamp fields into datetime objects
         timestamp_fields = {
