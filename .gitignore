@@ -38,6 +38,7 @@ yarn-error.log*
 
 # Documentation & Markdown Files
 docs/
+dics/
 
 # Data Dumps, Sample Data & Validation Output
 sample-data/
@@ -56,3 +57,4 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+.agents
