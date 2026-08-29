@@ -500,6 +500,8 @@ class AnalyticsPipeline:
                     entropy_score=f.entropy_score,
                     rationale=f.rationale,
                     evidence_record_ids=f.evidence_record_ids,
+                    raw_evidence_refs=getattr(f, "raw_evidence_refs", []),
+                    metric_values=getattr(f, "metric_values", {}),
                 )
                 db_session.add(finding_model)
 
@@ -607,6 +609,8 @@ class AnalyticsPipeline:
                     entropy_score=f.entropy_score,
                     rationale=f.rationale,
                     evidence_record_ids=f.evidence_record_ids,
+                    raw_evidence_refs=getattr(f, "raw_evidence_refs", []),
+                    metric_values=getattr(f, "metric_values", {}),
                 )
                 sync_session.add(finding_model)
 
