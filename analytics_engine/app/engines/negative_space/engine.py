@@ -46,12 +46,14 @@ class NegativeSpaceEngine:
         # Group events by dataset_type / standard_event_type
         events_by_dataset: Dict[str, List[Any]] = defaultdict(list)
         for ev in valid_events:
-            ds_type = LogicInterpreter.extract_field_value(ev, "dataset_type")
-            std_type = LogicInterpreter.extract_field_value(ev, "standard_event_type")
+            ds_type = getattr(ev, "dataset_type", None) or LogicInterpreter.extract_field_value(ev, "dataset_type")
+            std_type = getattr(ev, "standard_event_type", None) or LogicInterpreter.extract_field_value(ev, "standard_event_type")
             if ds_type:
                 events_by_dataset[str(ds_type)].append(ev)
+                events_by_dataset[str(ds_type).lower()].append(ev)
             if std_type:
                 events_by_dataset[str(std_type)].append(ev)
+                events_by_dataset[str(std_type).lower()].append(ev)
 
         for check in self.registry.list_checks(active_only=True):
             try:
@@ -245,37 +247,38 @@ class NegativeSpaceEngine:
         period_start: datetime,
         period_end: datetime,
     ) -> List[NegativeSpaceFindingDraft]:
-        """NS-03: Zero Coverage on Crown-Jewel Assets."""
+        """NS-03: Zero Telemetry / Coverage on Crown-Jewel & Tier-1 Assets."""
         findings = []
         assets = events_by_dataset.get("asset_inventory", []) or events_by_dataset.get("ASSET", [])
+        alerts = events_by_dataset.get("alert_metadata", []) or events_by_dataset.get("ALERT", [])
         coverages = events_by_dataset.get("coverage_reports", []) or events_by_dataset.get("COVERAGE", [])
 
         crown_jewels = []
         for a in assets:
             crit = str(LogicInterpreter.extract_field_value(a, "criticality_tier") or "").upper()
-            if crit in ("CROWN_JEWEL", "CRITICAL", "TIER_1"):
+            if crit in ("CROWN_JEWEL", "CRITICAL", "TIER_1", "TIER-1"):
                 crown_jewels.append(a)
 
         if not crown_jewels:
             return findings
 
-        # Index coverages by asset_id
-        coverage_by_asset = defaultdict(list)
+        # Index alerts & coverages by asset_id
+        telemetry_assets = set()
         for cov in coverages:
             aid = LogicInterpreter.extract_field_value(cov, "asset_id") or LogicInterpreter.extract_field_value(cov, "raw_ref_id")
-            uptime = LogicInterpreter.extract_field_value(cov, "uptime_pct")
             if aid:
-                coverage_by_asset[str(aid)].append(float(uptime) if uptime is not None else 100.0)
+                telemetry_assets.add(str(aid))
+
+        for alt in alerts:
+            aid = LogicInterpreter.extract_field_value(alt, "asset_id")
+            if aid:
+                telemetry_assets.add(str(aid))
 
         unmonitored_assets = []
         for cj in crown_jewels:
             aid = LogicInterpreter.extract_field_value(cj, "asset_id") or LogicInterpreter.extract_field_value(cj, "raw_ref_id")
             host = LogicInterpreter.extract_field_value(cj, "hostname")
-            rates = coverage_by_asset.get(str(aid), []) or coverage_by_asset.get(str(host), [])
-
-            if not rates:
-                unmonitored_assets.append(cj)
-            elif (sum(rates) / len(rates)) < 50.0:
+            if str(aid) not in telemetry_assets and (not host or str(host) not in telemetry_assets):
                 unmonitored_assets.append(cj)
 
         if unmonitored_assets:
@@ -285,8 +288,9 @@ class NegativeSpaceEngine:
 
             sev_score = check.severity_base
             evidence_ids = [str(LogicInterpreter.extract_field_value(a, "event_id")) for a in unmonitored_assets if LogicInterpreter.extract_field_value(a, "event_id")]
+            asset_refs = [str(LogicInterpreter.extract_field_value(a, "asset_id") or LogicInterpreter.extract_field_value(a, "hostname")) for a in unmonitored_assets]
 
-            rationale = f"{unmon_count} out of {total_cj} Crown Jewel assets lack active EDR/WAF/NDR telemetry coverage reports."
+            rationale = f"{unmon_count} out of {total_cj} Tier-1 Critical assets ({', '.join(asset_refs[:5])}) exhibit total telemetry silence and lack active EDR/WAF/NDR logs."
 
             draft = NegativeSpaceFindingDraft(
                 entity_id=entity_id,
@@ -303,6 +307,8 @@ class NegativeSpaceEngine:
                 drop_percentage=drop_pct,
                 rationale=rationale,
                 evidence_record_ids=evidence_ids,
+                raw_evidence_refs=asset_refs,
+                metric_values={"unmonitored_count": unmon_count, "total_critical_assets": total_cj},
                 is_degraded=False,
                 degradation_factor=1.0,
                 recommendation=check.recommendation,
