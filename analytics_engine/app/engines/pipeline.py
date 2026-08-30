@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
@@ -463,6 +463,13 @@ class AnalyticsPipeline:
     ) -> None:
         """Asynchronously writes findings, correlations, and risk scores to PostgreSQL."""
         try:
+            target_eid = uuid.UUID(str(risk_score_draft.entity_id))
+            # Clear previous findings & correlations for this entity before inserting new evaluation
+            await db_session.execute(delete(ExecutionGapFinding).where(ExecutionGapFinding.entity_id == target_eid))
+            await db_session.execute(delete(NegativeSpaceFinding).where(NegativeSpaceFinding.entity_id == target_eid))
+            await db_session.execute(delete(Correlation).where(Correlation.entity_id == target_eid))
+            await db_session.flush()
+
             # 1. Execution Gap Findings
             for f in eg_findings:
                 finding_model = ExecutionGapFinding(
@@ -574,6 +581,12 @@ class AnalyticsPipeline:
     ) -> None:
         """Synchronously writes findings, correlations, and risk scores to PostgreSQL."""
         try:
+            target_eid = uuid.UUID(str(risk_score_draft.entity_id))
+            # Clear previous findings & correlations for this entity before inserting new evaluation
+            sync_session.query(ExecutionGapFinding).filter(ExecutionGapFinding.entity_id == target_eid).delete()
+            sync_session.query(NegativeSpaceFinding).filter(NegativeSpaceFinding.entity_id == target_eid).delete()
+            sync_session.query(Correlation).filter(Correlation.entity_id == target_eid).delete()
+            sync_session.flush()
             for f in eg_findings:
                 finding_model = ExecutionGapFinding(
                     finding_id=f.finding_id,
