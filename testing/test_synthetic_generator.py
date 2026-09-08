@@ -43,16 +43,16 @@ from synthetic_data.generator import (
 import os
 import sys
 
-dp_root = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data-processing")
+dp_root = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data_processing")
 if dp_root not in sys.path:
     sys.path.insert(0, dp_root)
 
-# Imports from data-processing and analytics-engine
+# Imports from data_processing and analytics_engine
 from shared.events.enums import DatasetType, StandardEventType
-from app.parsers.csv_parser import CSVParser
-from app.parsers.json_parser import JSONParser
-from app.quarantine.validator import RowValidator
-from app.mapping.engine import FieldMappingEngine
+from data_processing.parsers.csv_parser import CSVParser
+from data_processing.parsers.json_parser import JSONParser
+from data_processing.quarantine.validator import RowValidator
+from data_processing.mapping.engine import FieldMappingEngine
 
 from analytics_engine import (
     ExecutionGapEngine,

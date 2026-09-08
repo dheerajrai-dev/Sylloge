@@ -58,7 +58,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const demoLogin = async () => {
-    await login('supervisor', 'superpass123!');
+    const demoUser: User = {
+      user_id: '00000000-0000-0000-0000-000000000001',
+      username: 'supervisor',
+      full_name: 'Lead Cyber Inspector (Demo)',
+      role: 'supervisor',
+      is_active: true,
+    };
+    const demoJwt = 'demo_airgap_token_local';
+    setToken(demoJwt);
+    setUser(demoUser);
+    localStorage.setItem('sat_sa_jwt_token', demoJwt);
+    localStorage.setItem('sat_sa_user', JSON.stringify(demoUser));
   };
 
   const logout = () => {

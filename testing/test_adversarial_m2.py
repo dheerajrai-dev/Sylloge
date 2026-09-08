@@ -22,12 +22,12 @@ from shared.models.submission import RawSubmission
 
 import sys
 import os
-dp_root = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data-processing")
+dp_root = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data_processing")
 if dp_root not in sys.path:
     sys.path.insert(0, dp_root)
 
-from app.parsers.base import BaseParser, ParsedRow
-from app.parsers import (
+from data_processing.parsers.base import BaseParser, ParsedRow
+from data_processing.parsers import (
     get_parser_for_dataset,
     CSVParser,
     JSONParser,
@@ -40,19 +40,19 @@ from app.parsers import (
     CoverageReportParser,
     AnalystActivityParser,
 )
-from app.quarantine.errors import QuarantineErrorCode, RowValidationFailure
-from app.quarantine.validator import RowValidator
-from app.quarantine.manager import QuarantineManager
-from app.mapping.transforms import (
+from data_processing.quarantine.errors import QuarantineErrorCode, RowValidationFailure
+from data_processing.quarantine.validator import RowValidator
+from data_processing.quarantine.manager import QuarantineManager
+from data_processing.mapping.transforms import (
     cast_boolean,
     normalize_severity,
     normalize_status,
     parse_timestamp,
 )
-from app.mapping.defaults import CANONICAL_FIELD_ALIASES, DATASET_TO_EVENT_TYPE, get_standard_event_type
-from app.mapping.engine import FieldMappingEngine
-from app.mapping.normalizer import CanonicalNormalizer
-from app.pipeline.ingestion_service import IngestionPipelineService
+from data_processing.mapping.defaults import CANONICAL_FIELD_ALIASES, DATASET_TO_EVENT_TYPE, get_standard_event_type
+from data_processing.mapping.engine import FieldMappingEngine
+from data_processing.mapping.normalizer import CanonicalNormalizer
+from data_processing.pipeline.ingestion_service import IngestionPipelineService
 
 
 # ============================================================================

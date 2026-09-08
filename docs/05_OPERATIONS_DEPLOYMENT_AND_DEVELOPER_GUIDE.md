@@ -85,8 +85,8 @@ cp .env.example .env
 | `MINIO_ACCESS_KEY`        | `minioadmin`                                          | MinIO root access key                 |
 | `MINIO_SECRET_KEY`        | `minioadmin`                                          | MinIO root secret key                 |
 | `MINIO_SECURE`            | `false`                                               | Use TLS/HTTPS for local S3 calls      |
-| `JWT_SECRET_KEY`          | `super_secret_airgap_jwt_key_2026_sih`                | Secret for signing local JWT tokens   |
-| `INTERNAL_SERVICE_KEY`    | `test_internal_service_key_2026`                      | Inter-service auth header validation  |
+| `JWT_SECRET_KEY`          | `<generate_secure_random_key_in_.env>`                | Secret for signing local JWT tokens   |
+| `INTERNAL_SERVICE_KEY`    | `<generate_secure_random_token_in_.env>`              | Inter-service auth header validation  |
 | `DATA_PROCESSING_URL`     | `http://localhost:8001`                               | Data Processing service endpoint      |
 | `ANALYTICS_ENGINE_URL`    | `http://localhost:8002`                               | Analytics Engine service endpoint     |
 | `AUDIT_SERVICE_URL`       | `http://localhost:8003`                               | Audit Manifest service endpoint       |

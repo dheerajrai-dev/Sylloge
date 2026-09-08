@@ -45,18 +45,16 @@ async def login(
     res = await db.execute(select(User).where(User.username == username))
     user = res.scalar_one_or_none()
 
+    admin_passwords = {p for p in (settings.DEFAULT_ADMIN_PASSWORD, settings.ADMIN_PASSWORD) if p}
     is_admin_attempt = (
-        username in (settings.DEFAULT_ADMIN_USERNAME, "admin")
-        and password in (settings.DEFAULT_ADMIN_PASSWORD, "supervisor_pass123", "superpass123!", "admin")
+        username in (settings.DEFAULT_ADMIN_USERNAME, settings.ADMIN_USERNAME, "admin")
+        and password in admin_passwords
     )
-    is_supervisor_attempt = (
-        username == "supervisor"
-        and password in ("superpass123!", "SuperSecretPass123!", "supervisor", "supervisor_pass123")
-    )
+    is_supervisor_attempt = False
 
     # Default supervisor/admin bootstrap fallback if database is fresh
-    if not user and (is_admin_attempt or is_supervisor_attempt):
-        target_username = settings.DEFAULT_ADMIN_USERNAME if is_admin_attempt else "supervisor"
+    if not user and is_admin_attempt:
+        target_username = settings.DEFAULT_ADMIN_USERNAME or settings.ADMIN_USERNAME or "admin"
         user = User(
             user_id=uuid.uuid4(),
             username=target_username,

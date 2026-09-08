@@ -5,7 +5,7 @@ import json
 import pytest
 
 from shared.events.enums import DatasetType
-from app.parsers import (
+from data_processing.parsers import (
     get_parser_for_dataset,
     CSVParser,
     JSONParser,

@@ -5,9 +5,9 @@ import pytest
 
 from shared.events.enums import DatasetType, SeverityTier, StandardEventType
 from shared.models.mapping import FieldMappingProfile
-from app.mapping.defaults import get_standard_event_type
-from app.mapping.engine import FieldMappingEngine
-from app.mapping.normalizer import CanonicalNormalizer
+from data_processing.mapping.defaults import get_standard_event_type
+from data_processing.mapping.engine import FieldMappingEngine
+from data_processing.mapping.normalizer import CanonicalNormalizer
 
 
 def test_standard_event_type_associations():

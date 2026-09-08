@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 import sys
 import os
-ae_root = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "analytics-engine")
+ae_root = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "analytics_engine")
 if ae_root not in sys.path:
     sys.path.insert(0, ae_root)
 

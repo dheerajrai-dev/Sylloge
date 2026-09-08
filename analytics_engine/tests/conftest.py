@@ -21,7 +21,6 @@ for p in [engine_root, workspace_root]:
 os.environ["ENVIRONMENT"] = "test"
 os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 os.environ["SYNC_DATABASE_URL"] = "sqlite:///:memory:"
-os.environ["INTERNAL_SERVICE_KEY"] = "test_internal_service_key_2026"
 
 from shared.db.base import Base
 import shared.models

@@ -25,7 +25,7 @@ import shared.models
 from shared.models.entity import Entity
 from shared.models.submission import RawSubmission
 from shared.models.mapping import FieldMappingProfile
-from app.main import app
+from data_processing.main import app
 
 
 test_async_engine = create_async_engine(

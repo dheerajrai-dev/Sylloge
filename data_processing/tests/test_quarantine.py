@@ -5,10 +5,10 @@ import pytest
 from unittest.mock import MagicMock, patch
 
 from shared.events.enums import DatasetType
-from app.parsers.base import ParsedRow
-from app.quarantine.errors import QuarantineErrorCode, RowValidationFailure
-from app.quarantine.validator import RowValidator
-from app.quarantine.manager import QuarantineManager
+from data_processing.parsers.base import ParsedRow
+from data_processing.quarantine.errors import QuarantineErrorCode, RowValidationFailure
+from data_processing.quarantine.validator import RowValidator
+from data_processing.quarantine.manager import QuarantineManager
 
 
 def test_row_validator_missing_required_field():
@@ -136,7 +136,7 @@ def test_quarantine_manager_minio_upload_mocked():
     )
     mgr.record_failure(f)
 
-    with patch("app.quarantine.manager.minio_client.upload_json", return_value="fake_sha256") as mock_upload:
+    with patch("data_processing.quarantine.manager.minio_client.upload_json", return_value="fake_sha256") as mock_upload:
         obj_name = mgr.save_dump_to_minio()
         assert obj_name == f"quarantines/{ent_id}/{sub_id}_quarantined.json"
         mock_upload.assert_called_once()

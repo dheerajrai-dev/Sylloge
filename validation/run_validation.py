@@ -26,14 +26,15 @@ from sqlalchemy import engine
 repo_root = Path(__file__).resolve().parent.parent
 
 for mod_dir in [
-    "data-processing",
+    "",
+    "data_processing",
     "analytics_engine",
     "analytics_engine/app",
-    "audit-service",
+    "audit_service",
     "backend",
-    "synthetic-data",
+    "shared",
 ]:
-    module_path = repo_root / mod_dir
+    module_path = (repo_root / mod_dir).resolve() if mod_dir else repo_root
     if module_path.exists() and str(module_path) not in sys.path:
         sys.path.insert(0, str(module_path))
 

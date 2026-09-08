@@ -116,21 +116,6 @@ export async function createEntity(data: { entity_code: string; name: string; se
   let created: any = null;
   try {
     created = await apiClient.post('/entities', data);
-  } catch (err: any) {
-    // If unauthenticated or token missing/expired, auto-login with supervisor credentials & retry
-    if (err.message && (err.message.includes('Missing Bearer') || err.message.includes('401') || err.message.includes('Invalid JWT') || err.message.includes('token'))) {
-      try {
-        const auth = await loginUser('admin', 'supervisor_pass123');
-        if (auth?.access_token) {
-          localStorage.setItem('sat_sa_jwt_token', auth.access_token);
-          localStorage.setItem('sat_sa_user', JSON.stringify(auth.user));
-          created = await apiClient.post('/entities', data);
-        }
-      } catch {
-        // Fallthrough to mock creation if backend call fails
-      }
-    }
-
     if (!created) {
       // Offline mock fallback if backend is unreachable
       created = {

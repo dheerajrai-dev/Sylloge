@@ -17,16 +17,16 @@ from shared.models.submission import RawSubmission
 
 import sys
 import os
-dp_root = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data-processing")
+dp_root = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data_processing")
 if dp_root not in sys.path:
     sys.path.insert(0, dp_root)
 
-from app.parsers import get_parser_for_dataset, CSVParser, JSONParser
-from app.quarantine.validator import RowValidator
-from app.quarantine.manager import QuarantineManager
-from app.mapping.engine import FieldMappingEngine
-from app.mapping.normalizer import CanonicalNormalizer
-from app.pipeline.ingestion_service import IngestionPipelineService
+from data_processing.parsers import get_parser_for_dataset, CSVParser, JSONParser
+from data_processing.quarantine.validator import RowValidator
+from data_processing.quarantine.manager import QuarantineManager
+from data_processing.mapping.engine import FieldMappingEngine
+from data_processing.mapping.normalizer import CanonicalNormalizer
+from data_processing.pipeline.ingestion_service import IngestionPipelineService
 
 
 def test_e2e_all_8_datasets_sync_ingestion(sync_db: Session, sample_entity: Entity):

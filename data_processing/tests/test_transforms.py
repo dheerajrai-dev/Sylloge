@@ -3,7 +3,7 @@
 import datetime
 import pytest
 from shared.events.enums import SeverityTier
-from app.mapping.transforms import (
+from data_processing.mapping.transforms import (
     cast_boolean,
     normalize_severity,
     normalize_status,

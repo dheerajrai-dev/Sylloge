@@ -14,6 +14,7 @@ from shared.auth.service_auth import (
     verify_internal_service_key,
 )
 from shared.errors import AuthenticationError
+from shared.config import settings
 from shared.schemas.auth import TokenPayload
 
 
@@ -116,7 +117,7 @@ async def test_fastapi_auth_dependencies():
 @pytest.mark.asyncio
 async def test_internal_service_key_validation():
     """Verifies internal service key validation."""
-    valid_key = "test_internal_service_key_2026"
+    valid_key = settings.INTERNAL_SERVICE_KEY
     assert await verify_internal_service_key(valid_key) == valid_key
 
     with pytest.raises(HTTPException) as exc_info:

@@ -5,7 +5,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- Insert Default Supervisor User
--- Password: supervisor_pass123
+-- Initial admin account (configured via .env / migration)
 INSERT INTO users (
     user_id,
     username,

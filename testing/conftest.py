@@ -1,6 +1,7 @@
 """Pytest configuration and shared test fixtures."""
 
 import os
+import sys
 import uuid
 from datetime import datetime, timezone
 from typing import AsyncGenerator, Generator
@@ -10,12 +11,20 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import Session, sessionmaker
 
+# Ensure repository root and all service directories are in sys.path
+repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if repo_root not in sys.path:
+    sys.path.insert(0, repo_root)
+
+for service_dir in ["data_processing", "analytics_engine", "backend", "audit_service", "shared"]:
+    service_path = os.path.join(repo_root, service_dir)
+    if os.path.isdir(service_path) and service_path not in sys.path:
+        sys.path.insert(0, service_path)
+
 # Set test environment overrides before importing shared
 os.environ["ENVIRONMENT"] = "test"
 os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 os.environ["SYNC_DATABASE_URL"] = "sqlite:///:memory:"
-os.environ["JWT_SECRET_KEY"] = "test_super_secret_jwt_key_sih2026_sat_sa_minimum_64_bytes_for_hs512"
-os.environ["INTERNAL_SERVICE_KEY"] = "test_internal_service_key_2026"
 
 from shared.auth.security import hash_password
 from shared.db.base import Base
