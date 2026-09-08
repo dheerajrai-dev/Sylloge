@@ -37,7 +37,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # Documentation & Markdown Files
-docs/
+# docs/ tracked in repository
 
 # Data Dumps, Sample Data & Validation Output
 sample-data/
