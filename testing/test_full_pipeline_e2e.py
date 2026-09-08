@@ -18,9 +18,9 @@ import os
 
 # Add service paths
 repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-for service in ["analytics-engine", "data-processing", "backend", "audit-service"]:
+for service in ["analytics_engine", "data_processing", "backend", "audit_service", "analytics-engine", "data-processing", "audit-service"]:
     srv_path = os.path.join(repo_root, service)
-    if srv_path not in sys.path:
+    if os.path.exists(srv_path) and srv_path not in sys.path:
         sys.path.insert(0, srv_path)
 
 from shared.events.enums import DatasetType, SeverityTier, RiskTier

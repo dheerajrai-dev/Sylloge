@@ -42,9 +42,25 @@ The platform ingests multi-vendor security telemetry across 8 core log types, no
 ├── analytics_engine/    # 6 Analytics Engines (Execution Gap, Negative Space, etc.)
 ├── backend/             # FastAPI REST API Gateway, SQLAlchemy ORM & Auth
 ├── frontend/            # React SPA Dashboard (Vite, TailwindCSS, Recharts)
-├── data-processing/     # Field Mapping & Canonical Schema Normalization
-├── audit-service/       # Cryptographic Merkle Root Verification Engine
-└── validation/          # Automated Precision/Recall Validation CLI & Compliance Reporting
+├── data_processing/     # Field Mapping & Canonical Schema Normalization
+├── audit_service/       # Cryptographic Merkle Root Verification Engine
+├── shared/              # Shared data models, schemas, auth & storage
+├── testing/             # Unit, integration & adversarial test suites
+├── validation/          # Automated Precision/Recall Validation CLI & Compliance Reporting
+└── docs/                # Comprehensive 5-Document Master Engineering System
+
+---
+
+## 📚 Master Engineering Documentation System
+
+The repository is fully documented across 5 authoritative guides in `docs/`:
+
+1. [**01_PRODUCT_AND_BUSINESS_GUIDE.md**](file:///docs/01_PRODUCT_AND_BUSINESS_GUIDE.md): Executive summary, NCIIPC mandate (Section 70A IT Act), personas, 6 supervisory views, lifecycles, and 90s hero demo.
+2. [**02_SYSTEM_ARCHITECTURE.md**](file:///docs/02_SYSTEM_ARCHITECTURE.md): 9-layer physical pipeline, 11-layer logical architecture, 5 microservices, PostgreSQL ERD, MinIO S3, and sequence flows.
+3. [**03_CODEBASE_AND_TECH_STACK_GUIDE.md**](file:///docs/03_CODEBASE_AND_TECH_STACK_GUIDE.md): Tech stack rationale, folder-by-folder codebase breakdown, file inventory, dependency maps, and upload-to-sealing trace.
+4. [**04_ANALYTICS_AND_DATA_ENGINE.md**](file:///docs/04_ANALYTICS_AND_DATA_ENGINE.md): Mathematical formulas (EWMA 3-sigma, Shannon entropy, CV dispersion), 8 EG rules + 8 NS checks + catalogs, Z-scores, and Tripartite Risk.
+5. [**05_OPERATIONS_DEPLOYMENT_AND_DEVELOPER_GUIDE.md**](file:///docs/05_OPERATIONS_DEPLOYMENT_AND_DEVELOPER_GUIDE.md): Local startup runbooks, air-gapped Docker Compose deployment, testing, extension tutorials, and troubleshooting runbooks.
+- [**DOCS_AUDIT_REPORT.md**](file:///docs/DOCS_AUDIT_REPORT.md): Audit log of reviewed artifacts, resolved discrepancies, and migration log.
 ```
 
 ---

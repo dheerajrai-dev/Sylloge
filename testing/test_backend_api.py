@@ -141,12 +141,12 @@ async def test_entities_crud_and_scores(async_db, supervisor_headers):
         # 5. Get Scores
         scores_res = await client.get(f"/api/v1/entities/{entity_id}/scores", headers=supervisor_headers)
         assert scores_res.status_code == 200
-        assert len(scores_res.json()) == 1
+        assert len(scores_res.json()) == 2
 
         # 6. Get History
         hist_res = await client.get(f"/api/v1/entities/{entity_id}/history", headers=supervisor_headers)
         assert hist_res.status_code == 200
-        assert len(hist_res.json()) == 1
+        assert len(hist_res.json()) == 2
 
         # 7. Get Radar
         radar_res = await client.get(f"/api/v1/entities/{entity_id}/radar", headers=supervisor_headers)

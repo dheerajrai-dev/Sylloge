@@ -50,10 +50,12 @@ class NegativeSpaceEngine:
             std_type = getattr(ev, "standard_event_type", None) or LogicInterpreter.extract_field_value(ev, "standard_event_type")
             if ds_type:
                 events_by_dataset[str(ds_type)].append(ev)
-                events_by_dataset[str(ds_type).lower()].append(ev)
+                if str(ds_type).lower() != str(ds_type):
+                    events_by_dataset[str(ds_type).lower()].append(ev)
             if std_type:
                 events_by_dataset[str(std_type)].append(ev)
-                events_by_dataset[str(std_type).lower()].append(ev)
+                if str(std_type).lower() != str(std_type):
+                    events_by_dataset[str(std_type).lower()].append(ev)
 
         for check in self.registry.list_checks(active_only=True):
             try:
