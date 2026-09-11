@@ -122,7 +122,10 @@ class PeerBenchmarkEngine:
                 risk_z = -z
             else:
                 risk_z = z
-            risk_z_list.append(risk_z)
+            
+            # Robust statistical clamping to avoid extreme outlier saturation
+            clamped_risk_z = min(3.5, max(-3.5, risk_z))
+            risk_z_list.append(clamped_risk_z)
 
             benchmarks.append(
                 PeerBenchmarkDraft(

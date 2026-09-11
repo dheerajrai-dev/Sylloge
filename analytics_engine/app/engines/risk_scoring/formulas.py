@@ -11,12 +11,12 @@ def compute_execution_gap_subscore(
     """
     Computes Execution Gap sub-score S_EG in [0.0, 100.0]:
     S_EG = min(100.0, sum((sev / 100) * conf * w_type) * (100 / ScaleFactor))
-    where ScaleFactor = max(10, log10(alert_count + 10) * 5)
+    where ScaleFactor = max(15.0, log10(max(0, alert_count) + 10.0) * 10.0)
     """
     if not gap_findings:
         return 0.0
 
-    scale_factor = max(10.0, math.log10(max(0, alert_count) + 10.0) * 5.0)
+    scale_factor = max(15.0, math.log10(max(0, alert_count) + 10.0) * 10.0)
 
     raw_sum = 0.0
     for f in gap_findings:

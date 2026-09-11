@@ -189,16 +189,16 @@ class ExecutionGapEngine:
         period_start: datetime,
         period_end: datetime,
     ) -> List[ExecutionGapFindingDraft]:
-        """EG-02: Missing Escalation After Severity Threshold."""
+        """EG-02: Missing Escalation After Severity Threshold / Delayed Escalation SLA Breach."""
         findings = []
         cases = events_by_dataset.get("case_management", []) or events_by_dataset.get("CASE", [])
         escalations = events_by_dataset.get("escalation_records", []) or events_by_dataset.get("ESCALATION", [])
 
-        escalated_case_ids = set()
+        escalations_by_case: Dict[str, List[Any]] = defaultdict(list)
         for esc in escalations:
             cid = LogicInterpreter.extract_field_value(esc, "case_id") or LogicInterpreter.extract_field_value(esc, "raw_ref_id")
             if cid:
-                escalated_case_ids.add(str(cid))
+                escalations_by_case[str(cid)].append(esc)
 
         for case in cases:
             priority = str(LogicInterpreter.extract_field_value(case, "priority") or "").upper()
@@ -207,7 +207,7 @@ class ExecutionGapEngine:
                 continue
 
             case_id = LogicInterpreter.extract_field_value(case, "raw_ref_id") or LogicInterpreter.extract_field_value(case, "case_id")
-            if not case_id or str(case_id) in escalated_case_ids:
+            if not case_id:
                 continue
 
             created_time = LogicInterpreter.extract_field_value(case, "event_timestamp")
@@ -218,7 +218,52 @@ class ExecutionGapEngine:
                 end_t = closed_time or period_end
                 duration_open = max(0.0, (end_t - created_time).total_seconds() / 3600.0)
 
-            if duration_open >= 4.0:
+            case_escs = escalations_by_case.get(str(case_id), [])
+
+            # Case 1: Escalation exists, but was delayed or breached (> 4h SLA)
+            if case_escs:
+                for esc in case_escs:
+                    esc_delay_mins = LogicInterpreter.extract_field_value(esc, "escalation_delay_minutes")
+                    esc_status = str(LogicInterpreter.extract_field_value(esc, "escalation_status") or "").upper()
+                    esc_time = LogicInterpreter.extract_field_value(esc, "event_timestamp") or LogicInterpreter.extract_field_value(esc, "escalated_at")
+
+                    delay_hours = 0.0
+                    if esc_delay_mins is not None:
+                        try:
+                            delay_hours = float(esc_delay_mins) / 60.0
+                        except (ValueError, TypeError):
+                            delay_hours = 0.0
+                    elif created_time and esc_time:
+                        delay_hours = max(0.0, (esc_time - created_time).total_seconds() / 3600.0)
+
+                    if delay_hours > 4.0 or esc_status == "BREACHED":
+                        event_uuid = str(LogicInterpreter.extract_field_value(case, "event_id") or case_id)
+                        esc_uuid = str(LogicInterpreter.extract_field_value(esc, "event_id") or LogicInterpreter.extract_field_value(esc, "raw_ref_id") or "ESC")
+                        raw_idx = LogicInterpreter.extract_field_value(case, "raw_row_index")
+
+                        draft = ExecutionGapFindingDraft(
+                            entity_id=entity_id,
+                            rule_id=rule.rule_code,
+                            rule_name=rule.name,
+                            rule_category=rule.category,
+                            severity="CRITICAL",
+                            severity_score=rule.severity_base,
+                            confidence=rule.confidence,
+                            period_start=period_start,
+                            period_end=period_end,
+                            description=f"P1 Critical Case {case_id} escalation was delayed ({round(delay_hours, 1)}h) beyond 4-hour SLA.",
+                            rationale=f"P1 Critical Case {case_id} had a delayed escalation exceeding the 4-hour SLA (escalation delay: {round(delay_hours, 1)} hours, status: {esc_status or 'BREACHED'}).",
+                            evidence_record_ids=[event_uuid, esc_uuid],
+                            raw_evidence_refs=[case_id],
+                            raw_row_indices=[raw_idx] if raw_idx is not None else [],
+                            metric_values={"duration_open_hours": round(delay_hours, 1), "sla_threshold_hours": 4, "escalation_status": esc_status or "BREACHED"},
+                            recommendation=rule.recommendation,
+                        )
+                        findings.append(draft)
+                        break
+
+            # Case 2: Completely missing escalation for P1 case open >= 4 hours
+            elif duration_open >= 4.0:
                 event_uuid = str(LogicInterpreter.extract_field_value(case, "event_id") or case_id)
                 raw_idx = LogicInterpreter.extract_field_value(case, "raw_row_index")
 
@@ -270,7 +315,7 @@ class ExecutionGapEngine:
 
         for case in cases:
             status = str(LogicInterpreter.extract_field_value(case, "status") or "").upper()
-            if status not in ("OPEN", "IN_PROGRESS", "ACTIVE", "NEW"):
+            if status not in ("OPEN", "IN_PROGRESS", "ACTIVE", "NEW", "UNASSIGNED", "PENDING"):
                 continue
 
             case_id = LogicInterpreter.extract_field_value(case, "raw_ref_id") or LogicInterpreter.extract_field_value(case, "case_id")
@@ -278,6 +323,14 @@ class ExecutionGapEngine:
 
             last_action = last_action_by_case.get(str(case_id)) or created_time or period_start
             idle_hours = max(0.0, (period_end - last_action).total_seconds() / 3600.0)
+
+            # Check explicit resolution_time_hours if provided
+            resolution_time_hours = LogicInterpreter.extract_field_value(case, "resolution_time_hours")
+            if resolution_time_hours is not None:
+                try:
+                    idle_hours = max(idle_hours, float(resolution_time_hours))
+                except (ValueError, TypeError):
+                    pass
 
             if idle_hours > 72.0:
                 idle_days = round(idle_hours / 24.0, 1)
@@ -295,8 +348,8 @@ class ExecutionGapEngine:
                     confidence=rule.confidence,
                     period_start=period_start,
                     period_end=period_end,
-                    description=f"Case {case_id} has been dormant for over 72 hours without analyst activity.",
-                    rationale=f"Case {case_id} has been dormant for {idle_days} days without any analyst audit trail or notes.",
+                    description=f"Case {case_id} has been dormant/unassigned for over 72 hours without analyst activity.",
+                    rationale=f"Case {case_id} has been dormant/unassigned for {idle_days} days without any analyst audit trail or notes.",
                     evidence_record_ids=[event_uuid],
                     raw_evidence_refs=[case_id],
                     raw_row_indices=[raw_idx] if raw_idx is not None else [],
@@ -483,7 +536,7 @@ class ExecutionGapEngine:
 
         for esc in escalations:
             esc_to = str(LogicInterpreter.extract_field_value(esc, "escalated_to") or "").upper()
-            if not ("TIER_3" in esc_to or "MANAGEMENT" in esc_to or "CERT" in esc_to or "IR" in esc_to):
+            if not any(k in esc_to for k in ("TIER_3", "TIER-3", "MANAGEMENT", "MANAGER", "CISO", "CERT", "IR", "LEAD", "EXECUTIVE")):
                 continue
 
             case_id = LogicInterpreter.extract_field_value(esc, "case_id") or LogicInterpreter.extract_field_value(esc, "raw_ref_id")

@@ -123,7 +123,8 @@ def extract_entity_metrics(
 
     # 5. Execution Gap Rate
     eg_count = len(execution_gap_findings) if execution_gap_findings else 0
-    eg_rate = round((float(eg_count) / float(max(total_cases, 1))) * 100.0, 2)
+    denominator = max(total_cases, len(alerts), 1)
+    eg_rate = round(min(100.0, (float(eg_count) / float(denominator)) * 100.0), 2)
 
     return EntityMetricSnapshot(
         entity_id=entity_id,

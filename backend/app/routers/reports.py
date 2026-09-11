@@ -76,13 +76,32 @@ async def export_entity_compliance_report(
     }
     weights = {"execution_gap": 0.45, "negative_space": 0.35, "peer_deviation": 0.20}
 
-    # 3. Fetch Findings
+    # 3. Fetch Findings (prioritize diverse rule coverage)
     eg_res = await db.execute(
         select(ExecutionGapFinding)
         .where(ExecutionGapFinding.entity_id == entity_id)
         .order_by(desc(ExecutionGapFinding.created_at))
-        .limit(10)
+        .limit(50)
     )
+    all_egs = eg_res.scalars().all()
+    distinct_eg_map: Dict[str, List[Any]] = {}
+    for eg in all_egs:
+        if eg.rule_id not in distinct_eg_map:
+            distinct_eg_map[eg.rule_id] = []
+        distinct_eg_map[eg.rule_id].append(eg)
+
+    selected_egs = []
+    for rule_id, rule_findings in distinct_eg_map.items():
+        selected_egs.append(rule_findings[0])
+    if len(selected_egs) < 10:
+        for rule_id, rule_findings in distinct_eg_map.items():
+            for f in rule_findings[1:]:
+                if len(selected_egs) >= 10:
+                    break
+                selected_egs.append(f)
+            if len(selected_egs) >= 10:
+                break
+
     eg_findings = [
         ReportFindingItem(
             title=eg.rule_name,
@@ -92,7 +111,7 @@ async def export_entity_compliance_report(
             rationale=eg.rationale,
             evidence_record_ids=[str(x) for x in (eg.evidence_record_ids or [])],
         )
-        for eg in eg_res.scalars().all()
+        for eg in selected_egs
     ]
 
     ns_res = await db.execute(
