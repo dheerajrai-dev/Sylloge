@@ -22,6 +22,7 @@ COPY data_processing /app/data_processing
 COPY audit_service /app/audit_service
 COPY alembic /app/alembic
 COPY alembic.ini /app/alembic.ini
+COPY infrastructure /app/infrastructure
 
 EXPOSE 8000
 

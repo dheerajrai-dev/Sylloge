@@ -69,9 +69,35 @@ def get_sync_db() -> Generator[Session, None, None]:
 
 
 async def init_db_schema() -> None:
-    """Creates all tables defined in Base metadata (useful for test environments)."""
-    async with async_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    """Creates tables via Alembic migrations and seeds the database."""
+    import os
+    import subprocess
+    from shared.logging import logger
+    
+    # Run Alembic migrations
+    try:
+        subprocess.run(
+            ["alembic", "upgrade", "head"], 
+            check=True, 
+            cwd="/app"
+        )
+        logger.info("Alembic migrations completed successfully.")
+    except Exception as e:
+        logger.error(f"Failed to run alembic migrations: {e}")
+        # We don't return here so seed script can still try to run, or we can return
+        
+    if os.path.exists("/app/infrastructure/postgres/init.sql"):
+        try:
+            with open("/app/infrastructure/postgres/init.sql", "r") as f:
+                sql = f.read()
+            from sqlalchemy import text
+            async with async_engine.begin() as conn:
+                for statement in sql.split(';'):
+                    stmt = statement.strip()
+                    if stmt and not stmt.startswith('--'):
+                        await conn.execute(text(stmt))
+        except Exception as e:
+            logger.error(f"Failed to run init.sql: {e}")
 
 
 async def drop_db_schema() -> None:
