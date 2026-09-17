@@ -116,27 +116,28 @@ export async function createEntity(data: { entity_code: string; name: string; se
   let created: any = null;
   try {
     created = await apiClient.post('/entities', data);
-    if (!created) {
-      // Offline mock fallback if backend is unreachable
-      created = {
-        entity_id: 'c1f7a420-5692-4f3b-8511-9a72df89400' + (mockWorklist.length + 1),
-        entity_code: data.entity_code,
-        name: data.name,
-        sector: data.sector,
-        size_tier: data.size_tier,
-        contact_email: data.contact_email || 'soc@' + data.entity_code.toLowerCase() + '.internal',
-        is_active: true,
-        composite_risk_score: 25.0,
-        execution_gap_score: 20.0,
-        negative_space_score: 15.0,
-        peer_deviation_score: 30.0,
-        risk_tier: 'LOW',
-        trend_direction: 'STABLE',
-        open_findings_count: 0,
-        sparkline: [25.0],
-        created_at: new Date().toISOString(),
-      };
-    }
+  } catch {
+    // Offline mock fallback if backend is unreachable
+  }
+  if (!created) {
+    created = {
+      entity_id: 'c1f7a420-5692-4f3b-8511-9a72df89400' + (mockWorklist.length + 1),
+      entity_code: data.entity_code,
+      name: data.name,
+      sector: data.sector,
+      size_tier: data.size_tier,
+      contact_email: data.contact_email || 'soc@' + data.entity_code.toLowerCase() + '.internal',
+      is_active: true,
+      composite_risk_score: 25.0,
+      execution_gap_score: 20.0,
+      negative_space_score: 15.0,
+      peer_deviation_score: 30.0,
+      risk_tier: 'LOW',
+      trend_direction: 'STABLE',
+      open_findings_count: 0,
+      sparkline: [25.0],
+      created_at: new Date().toISOString(),
+    };
   }
 
   // Update in-memory collections so dashboard & worklist immediately reflect the new entity

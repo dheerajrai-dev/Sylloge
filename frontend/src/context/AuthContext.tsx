@@ -64,6 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       full_name: 'Lead Cyber Inspector (Demo)',
       role: 'supervisor',
       is_active: true,
+      created_at: new Date().toISOString(),
     };
     const demoJwt = 'demo_airgap_token_local';
     setToken(demoJwt);
