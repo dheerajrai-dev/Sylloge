@@ -259,10 +259,18 @@ class LogicInterpreter:
         matched_events: List[Any] = []
 
         for target in target_events:
-            # Check target dataset match
+            # Check target dataset match — normalize to handle enum values, case, and underscores
             target_ds = cls.extract_field_value(target, "dataset_type")
             target_evt_type = cls.extract_field_value(target, "standard_event_type")
-            if join_spec.target_dataset not in (target_ds, target_evt_type):
+
+            def _norm_ds(v: Any) -> str:
+                if v is None:
+                    return ""
+                raw = v.value if hasattr(v, "value") else str(v)
+                return raw.lower().replace("_", "").replace("-", "").replace(" ", "")
+
+            join_norm = _norm_ds(join_spec.target_dataset)
+            if join_norm not in (_norm_ds(target_ds), _norm_ds(target_evt_type)):
                 continue
 
             # Check key matching

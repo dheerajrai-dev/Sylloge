@@ -259,6 +259,7 @@ export const UploadWorkflowPage: React.FC = () => {
 
       // --- Layer 3: Ingestion (Byte parsing & SHA-256 Merkle leaf hashing) ---
       updateLayer(3, 'RUNNING', 0, 0, 0, 0, 'Parsing CSV/JSON streams & computing SHA-256 leaf hashes');
+      let uploadFailCount = 0;
       for (const item of files) {
         try {
           const formData = new FormData();
@@ -266,9 +267,17 @@ export const UploadWorkflowPage: React.FC = () => {
           formData.append('dataset_type', item.datasetType);
           formData.append('file', item.file);
           await uploadSubmissionFile(formData);
-        } catch {
-          // Fallback gracefully in offline mock mode
+        } catch (uploadErr: any) {
+          uploadFailCount++;
+          console.error('[SAT-SA] Upload failed for', item.file.name, ':', uploadErr);
         }
+      }
+      if (uploadFailCount > 0) {
+        notify(
+          'warning',
+          'Backend Upload Offline',
+          `${uploadFailCount} of ${files.length} files could not be uploaded. Ensure Docker backend is running.`
+        );
       }
       await new Promise((r) => setTimeout(r, 650));
       updateLayer(3, 'COMPLETED', totalIngestedRows, 0, 0, 0, 'SHA-256 Merkle leaves verified');
@@ -293,8 +302,14 @@ export const UploadWorkflowPage: React.FC = () => {
       updateLayer(7, 'RUNNING', totalIngestedRows, 0, 0, 0, 'Executing dual engines: Execution Gap, Negative Space, Peer Deviation');
       try {
         await runPipeline(selectedEntityId);
-      } catch {
-        // Fallback gracefully in offline mock mode
+      } catch (pipelineErr: any) {
+        // DO NOT swallow — surface the error so the user knows the backend is unreachable
+        notify(
+          'warning',
+          'Analytics Engine Offline',
+          'Pipeline could not connect to the analytics backend. Ensure Docker containers are running and try again.'
+        );
+        console.error('[SAT-SA] Pipeline execution error:', pipelineErr);
       }
       await new Promise((r) => setTimeout(r, 850));
 

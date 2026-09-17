@@ -44,10 +44,21 @@ class ExecutionGapEngine:
         for ev in valid_events:
             ds_type = LogicInterpreter.extract_field_value(ev, "dataset_type")
             std_type = LogicInterpreter.extract_field_value(ev, "standard_event_type")
-            if ds_type:
-                events_by_dataset[str(ds_type)].append(ev)
-            if std_type:
-                events_by_dataset[str(std_type)].append(ev)
+            # Safely extract string — ORM may return enum object; add under all key variants
+            # to handle different upstream representations without duplicating within same key.
+            seen_keys: set = set()
+            if ds_type is not None:
+                ds_str = ds_type.value if hasattr(ds_type, "value") else str(ds_type)
+                for k in (ds_str.lower(), ds_str):
+                    if k not in seen_keys:
+                        events_by_dataset[k].append(ev)
+                        seen_keys.add(k)
+            if std_type is not None:
+                st_str = std_type.value if hasattr(std_type, "value") else str(std_type)
+                for k in (st_str.upper(), st_str.lower()):
+                    if k not in seen_keys:
+                        events_by_dataset[k].append(ev)
+                        seen_keys.add(k)
 
         # Iterate through active rules in registry
         for rule in self.registry.list_rules(active_only=True):
