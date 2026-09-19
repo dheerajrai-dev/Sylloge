@@ -83,6 +83,17 @@ export const EntityDetailPage: React.FC = () => {
     );
   }
 
+  // Group findings by rule+title to collapse repetitive alerts
+  type FindingGroup = { key: string; findings: UnifiedFinding[] };
+  const groupedFindings: FindingGroup[] = Object.values(
+    findings.reduce<Record<string, FindingGroup>>((acc, f) => {
+      const key = `${f.rule_or_check_id}::${f.title}`;
+      if (!acc[key]) acc[key] = { key, findings: [] };
+      acc[key].findings.push(f);
+      return acc;
+    }, {})
+  );
+
   return (
     <div className="space-y-6">
       {/* Top Bar Navigation */}
@@ -162,16 +173,14 @@ export const EntityDetailPage: React.FC = () => {
 
       {/* Grid: 45/35/20 Formula Dial & 6-Engine Radar */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Gauge & Subscore breakdown */}
         <CompositeScoreGauge
-          score={detail.latest_risk_score}
-          gapSubscore={detail.execution_gap_score}
-          negativeSubscore={detail.negative_space_score}
-          peerSubscore={detail.peer_deviation_score}
-          riskTier={detail.risk_tier}
+          score={detail.latest_risk_score || 0}
+          gapSubscore={detail.execution_gap_score || 0}
+          negativeSubscore={detail.negative_space_score || 0}
+          peerSubscore={detail.peer_deviation_score || 0}
+          riskTier={detail.risk_tier || 'LOW'}
         />
 
-        {/* 6-Engine Multi-Axis Radar */}
         <div className="bg-surface-card border border-surface-border rounded-xl p-6 shadow-xl flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -204,7 +213,7 @@ export const EntityDetailPage: React.FC = () => {
             <h3 className="text-base font-bold text-white tracking-tight">Active Supervisory Findings for {detail.entity.name}</h3>
             <p className="text-xs text-surface-muted">Detailed gap, omission, and correlation findings requiring supervisory review</p>
           </div>
-          <span className="text-xs text-slate-400 font-mono">{findings.length} findings recorded</span>
+          <span className="text-xs text-slate-400 font-mono">{findings.length} findings recorded ({groupedFindings.length} violation types)</span>
         </div>
 
         {findings.length === 0 ? (
@@ -213,39 +222,96 @@ export const EntityDetailPage: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-3">
-            {findings.map((f) => (
-              <div
-                key={f.finding_id}
-                className="p-4 rounded-xl bg-slate-950/80 border border-surface-border flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-slate-700 transition"
-              >
-                <div className="space-y-1 flex-1">
-                  <div className="flex items-center gap-2.5">
-                    <RiskBadge level={f.severity} size="sm" />
-                    <span className="font-bold text-slate-100 text-sm">{f.title}</span>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800">
-                      {f.rule_or_check_id}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-300 line-clamp-2">{f.description}</p>
-                </div>
-
-                <div className="flex items-center gap-3 shrink-0">
-                  <span className="text-[11px] font-mono text-slate-400">
-                    {f.evidence_record_ids.length} evidence rows
-                  </span>
-                  <button
-                    onClick={() => navigate(`/findings/${f.finding_id}`)}
-                    className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-brand-600 hover:text-white border border-slate-700 text-slate-300 text-xs font-medium inline-flex items-center gap-1 transition"
-                  >
-                    <span>Inspect Case</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
+            {groupedFindings.map((group) => (
+              <EntityFindingGroupRow
+                key={group.key}
+                findings={group.findings}
+                onInspect={(id) => navigate(`/findings/${id}`)}
+              />
             ))}
           </div>
         )}
       </div>
+    </div>
+  );
+};
+
+// Collapsible group row for EntityDetailPage
+const EntityFindingGroupRow: React.FC<{
+  findings: UnifiedFinding[];
+  onInspect: (id: string) => void;
+}> = ({ findings, onInspect }) => {
+  const [expanded, setExpanded] = useState(false);
+  const rep = findings[0];
+  const count = findings.length;
+  const totalEvidence = findings.reduce((s, f) => s + f.evidence_record_ids.length, 0);
+
+  return (
+    <div className="rounded-xl bg-slate-950/80 border border-surface-border hover:border-slate-700 transition overflow-hidden">
+      <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1 flex-1">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <RiskBadge level={rep.severity} size="sm" />
+            <span className="font-bold text-slate-100 text-sm">{rep.title}</span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800">
+              {rep.rule_or_check_id}
+            </span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-brand-950/60 border border-brand-800/60 text-brand-400">
+              {rep.engine}
+            </span>
+            {count > 1 && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-red-900/50 border border-red-700/60 text-red-300 font-mono">
+                ×{count} instances
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-slate-300 line-clamp-2">{rep.description}</p>
+        </div>
+
+        <div className="flex items-center gap-3 shrink-0">
+          <span className="text-[11px] font-mono text-slate-400">
+            {totalEvidence} evidence rows
+          </span>
+          {count === 1 ? (
+            <button
+              onClick={() => onInspect(rep.finding_id)}
+              className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-brand-600 hover:text-white border border-slate-700 text-slate-300 text-xs font-medium inline-flex items-center gap-1 transition"
+            >
+              <span>Inspect Case</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          ) : (
+            <button
+              onClick={() => setExpanded((v) => !v)}
+              className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium inline-flex items-center gap-1.5 transition"
+            >
+              <span>{expanded ? 'Collapse' : `Show ${count} cases`}</span>
+              <ArrowRight className={`w-3.5 h-3.5 transition-transform ${expanded ? 'rotate-90' : ''}`} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Expanded case rows */}
+      {expanded && count > 1 && (
+        <div className="border-t border-surface-border divide-y divide-surface-border/50 bg-slate-950/40">
+          {findings.map((f) => (
+            <div key={f.finding_id} className="px-4 py-2.5 flex items-center justify-between gap-4 hover:bg-slate-900/50 text-xs">
+              <p className="text-slate-300 flex-1">{f.description}</p>
+              <div className="flex items-center gap-3 shrink-0">
+                <span className="text-[11px] font-mono text-slate-500">{f.evidence_record_ids.length} ev.</span>
+                <button
+                  onClick={() => onInspect(f.finding_id)}
+                  className="px-2.5 py-1 rounded bg-slate-900 hover:bg-brand-600 hover:text-white border border-slate-700 text-slate-300 text-[11px] font-medium inline-flex items-center gap-1 transition"
+                >
+                  <span>Inspect</span>
+                  <ArrowRight className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

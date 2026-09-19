@@ -23,45 +23,12 @@ import {
   mockZScores,
 } from './mockData';
 
-function createMockJwtToken(username: string, role: string = 'supervisor'): string {
-  const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).replace(/=/g, '');
-  const payload = btoa(
-    JSON.stringify({
-      sub: '00000000-0000-0000-0000-000000000001',
-      username,
-      role,
-      iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + 86400,
-    })
-  ).replace(/=/g, '');
-  const signature = 'mock_signature_air_gapped_supervisor_enclave';
-  return `${header}.${payload}.${signature}`;
-}
-
 // Auth API
 export async function loginUser(username: string, password: string) {
-  try {
-    return await apiClient.post<{ access_token: string; token_type: string; user: any }>('/auth/login', {
-      username,
-      password,
-    });
-  } catch (err) {
-    if (username === 'supervisor' || username === 'admin') {
-      return {
-        access_token: createMockJwtToken(username, username === 'admin' ? 'admin' : 'supervisor'),
-        token_type: 'bearer',
-        user: {
-          user_id: '00000000-0000-0000-0000-000000000001',
-          username: username,
-          full_name: username === 'admin' ? 'System Administrator' : 'Lead Cyber Inspector',
-          role: username === 'admin' ? 'admin' : 'supervisor',
-          is_active: true,
-          created_at: new Date().toISOString(),
-        },
-      };
-    }
-    throw err;
-  }
+  return await apiClient.post<{ access_token: string; token_type: string; user: any }>('/auth/login', {
+    username,
+    password,
+  });
 }
 
 export async function fetchCurrentUser() {
